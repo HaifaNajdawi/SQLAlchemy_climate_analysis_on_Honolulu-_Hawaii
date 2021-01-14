@@ -16,12 +16,14 @@ def confg():
     Base.prepare(engine, reflect=True)
     Station=Base.classes.station
     Measurement=Base.classes.measurement
+    Station=Base.classes.station
+
     session = Session(engine)
 
     last_day = session.query(Measurement).order_by(Measurement.date.desc()).first().date
     last_12months=dt.datetime.strptime(last_day, '%Y-%m-%d') - dt.timedelta(days=365)
 
-    return Measurement,session,last_12months
+    return Measurement,Station,session,last_12months
 
 
 @app.route("/")
@@ -40,7 +42,7 @@ def home():
 @app.route("/api/v1.0/precipitation")
 def precipitation():
 
-    Measurement,session,last_12months = confg()
+    Measurement,Station,session,last_12months = confg()
     
     precip_date_query=session.query(Measurement.date,Measurement.prcp).filter(Measurement.date >last_12months).order_by(Measurement.date).all()
 
@@ -54,16 +56,15 @@ def precipitation():
 @app.route("/api/v1.0/stations")
 def stations():
 
-    Measurement,session,last_12months = confg()
-
-    station=session.query(Measurement.station).all()
+    Measurement,Station,session,last_12months = confg()
+    station=session.query(Station.station).all()
 
     return jsonify(station)
 
 @app.route("/api/v1.0/tobs")
 def tobs():
 
-    Measurement,session,last_12months = confg()
+    Measurement,Station,session,last_12months = confg()
 
     date_tobs_query=session.query(Measurement.date,Measurement.tobs).filter(Measurement.date > last_12months).filter(Measurement.station =='USC00519281').order_by(Measurement.tobs.desc()).all()
 
@@ -78,7 +79,7 @@ def tobs():
 @app.route("/api/v1.0/<start>")
 def start(start=None):
 
-    Measurement,session,last_12months = confg()
+    Measurement,Station,session,last_12months = confg()
 
     start_tobs_query=session.query(*[func.max(Measurement.tobs),func.min(Measurement.tobs),func.avg(Measurement.tobs)]).filter(Measurement.date >= start).all()
 
@@ -87,7 +88,7 @@ def start(start=None):
 @app.route("/api/v1.0/<start>/<end>")
 def start_end(start=None,end=None):
 
-    Measurement,session,last_12months = confg()
+    Measurement,Station,session,last_12months = confg()
 
     start_end_query=session.query(*[func.max(Measurement.tobs),func.min(Measurement.tobs),func.avg(Measurement.tobs)]).filter(Measurement.date >= start).filter(Measurement.date <= end).all()
 
